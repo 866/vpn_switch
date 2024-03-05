@@ -11,7 +11,7 @@ import (
 )
 
 // The server's port to be listening on
-const Port = ":8080"
+const Port = ":80"
 
 type MainPageInfo struct {
 	Checkbox string

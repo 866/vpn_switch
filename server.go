@@ -32,14 +32,14 @@ func vpnCommandStatus() bool {
 	return !(strings.TrimSpace(response) == "")
 }
 
-func cmdVPN(command string) {
+func cmdVPN(command string) (err error) {
 	// Runs vpn command in shell
 	cmd := exec.Command("nmcli", "connection", command, "ua-vpn")
-	err := cmd.Run()
+	err = cmd.Run()
 	if err != nil {
 		log.Printf("VPN %v NMCLI error output: %v", command, err)
-		return
 	}
+	return
 }
 
 func handleVPN(w http.ResponseWriter, r *http.Request) {
@@ -84,32 +84,64 @@ func handleVPN(w http.ResponseWriter, r *http.Request) {
 		log.Printf("POST to /vpn with payload: %v", requestData)
 
 		// Validate the received JSON
-		if _, ok := requestData["vpn"]; !ok {
+		var vpnErr error
+		if vpn_status, ok := requestData["vpn"]; !ok {
 			http.Error(w, "Invalid JSON. 'vpn' field missing.", http.StatusBadRequest)
 			return
+		} else if vpn_status {
+			vpnErr = cmdVPN("up")
+		} else {
+			vpnErr = cmdVPN("down")
 		}
 
-		// Respond with success message
-		successResponse := map[string]string{"message": "Received VPN set command successfully"}
-		if err := json.NewEncoder(w).Encode(successResponse); err != nil {
+		// Respond with a message
+		response := make(map[string]string)
+		if vpnErr == nil {
+			response["message"] = "Received VPN set command successfully."
+		} else {
+			response["message"] = "Error: " + vpnErr.Error()
+		}
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			log.Printf("Errors with sending the response to /vpn. Error: %v", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		log.Printf("The response has been sent successfully: %v", response)
 	default:
 		// For unsupported methods, return Method Not Allowed status
+		log.Printf("The HTTP method %v for /vpn is not allowed", r.Method)
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 }
 
-func cmdUSBOff() {
-	// Runs usb networking off command in shell
-	cmd := exec.Command("ifconfig", "usb0", "down")
-	err := cmd.Run()
-	if err != nil {
-		log.Println("The error occured while running 'ifconfig usb0 down'", err)
+func handleUSB(w http.ResponseWriter, r *http.Request) {
+	// Handles a USB request
+	log.Println("Send command \"USB Off\"")
+	err := cmdUSBOff()
+	// Create a response
+	response := make(map[string]string)
+	if err == nil {
+		response["message"] = "USB down has been executed successfully."
+	} else {
+		response["message"] = "Error: " + err.Error()
+	}
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		log.Printf("Errors with sending the response%v. Error: %v", response, err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	log.Printf("The response has been sent successfully: %v", response)
+}
+
+func cmdUSBOff() (err error) {
+	// Runs usb networking off command in shell
+	cmd := exec.Command("ifconfig", "usb0", "down")
+	err = cmd.Run()
+	if err != nil {
+		log.Println("The error occured while running 'ifconfig usb0 down'", err)
+	}
+	return
 }
 
 func main() {
@@ -136,7 +168,7 @@ func main() {
 	// Define VPN manipulation routes
 	http.HandleFunc("/vpnoff", func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Send command \"VPN Off\"")
-		fmt.Fprintf(w, "Sending a command to up a VPN...")
+		fmt.Fprintf(w, "Sending a command to down a VPN...")
 		cmdVPN("down")
 	})
 
@@ -147,11 +179,7 @@ func main() {
 	})
 
 	// Define usb off route
-	http.HandleFunc("/usboff", func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Send command \"USB Off\"")
-		fmt.Fprintf(w, "Sending a command to down a USB tethering...")
-		cmdUSBOff()
-	})
+	http.HandleFunc("/usboff", handleUSB)
 
 	// Run the server
 	log.Printf("Server listening on port %v...", Port)

@@ -7,10 +7,29 @@ import (
 	"log"
 	"net/http"
 	"os/exec"
+	"strings"
 )
+
+// The server's port to be listening on
+const Port = ":8080"
 
 type MainPageInfo struct {
 	Checkbox string
+}
+
+func vpnCommandStatus() bool {
+	// Check the VPN status
+	// Run the shell command
+	cmd := exec.Command("bash", "-c", "nmcli con show --active | grep ua-vpn")
+	output, err := cmd.Output()
+	// Convert output to string
+	response := string(output)
+	if err != nil && err.Error() != "exit status 1" {
+		fmt.Println("Error:", err)
+		return false
+	}
+	// Check if there is an active vpn connection in the list
+	return !(strings.TrimSpace(response) == "")
 }
 
 func cmdVPN(command string) {
@@ -35,7 +54,7 @@ func handleVPN(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	// Handle GET and POST differently
 	switch r.Method {
-	
+
 	// GET request
 	case http.MethodGet:
 		// Create a map representing the JSON response
@@ -50,10 +69,10 @@ func handleVPN(w http.ResponseWriter, r *http.Request) {
 		}
 
 		log.Printf("GET from /vpn response: %v", jsonResponse)
-	
+
 	// POST request
 	case http.MethodPost:
-		
+
 		// For POST requests, decode the JSON body
 		var requestData map[string]bool
 		if err := json.NewDecoder(r.Body).Decode(&requestData); err != nil {
@@ -93,9 +112,6 @@ func cmdUSBOff() {
 	}
 }
 
-// The server's port to be listening on
-const Port = ":8080"
-
 func main() {
 
 	// Serve static files
@@ -107,6 +123,10 @@ func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Main page is entered.")
 		data := MainPageInfo{""}
+		// Check status to change the slider position
+		if vpnCommandStatus() {
+			data.Checkbox = "checked"
+		}
 		tmpl.Execute(w, data)
 	})
 
@@ -133,6 +153,7 @@ func main() {
 		cmdUSBOff()
 	})
 
+	// Run the server
 	log.Printf("Server listening on port %v...", Port)
 	log.Fatal(http.ListenAndServe(Port, nil))
 }

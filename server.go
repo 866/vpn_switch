@@ -165,19 +165,6 @@ func main() {
 	// Handle VPN requests
 	http.HandleFunc("/vpn", handleVPN)
 
-	// Define VPN manipulation routes
-	http.HandleFunc("/vpnoff", func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Send command \"VPN Off\"")
-		fmt.Fprintf(w, "Sending a command to down a VPN...")
-		cmdVPN("down")
-	})
-
-	http.HandleFunc("/vpnon", func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Send command \"VPN On\"")
-		fmt.Fprintf(w, "Sending a command to up a VPN...")
-		cmdVPN("up")
-	})
-
 	// Define usb off route
 	http.HandleFunc("/usboff", handleUSB)
 

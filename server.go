@@ -43,13 +43,6 @@ func cmdVPN(command string) (err error) {
 }
 
 func handleVPN(w http.ResponseWriter, r *http.Request) {
-	// Check for other addresses
-	if r.URL.Path != "/vpn" {
-		http.Error(w, "404 not found.", http.StatusNotFound)
-		log.Printf("Wrong address is accessed: %v", r.URL.Path)
-		return
-	}
-
 	// We expect JSON communication
 	w.Header().Set("Content-Type", "application/json")
 	// Handle GET and POST differently
@@ -153,6 +146,11 @@ func main() {
 	// Handle main entry
 	tmpl := template.Must(template.ParseFiles("./templates/index.html"))
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			http.Error(w, "404 not found.", http.StatusNotFound)
+			log.Printf("Wrong address is accessed: %v", r.URL.Path)
+			return
+		}
 		log.Println("Main page is entered.")
 		data := MainPageInfo{""}
 		// Check status to change the slider position

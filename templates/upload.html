@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Upload File</title>
+</head>
+
+<body>
+    <h2>Upload Wireguard VPN configuration file</h2>
+    <form enctype="multipart/form-data" action="/upload" method="post">
+        <p id="file-result">[MAX FILE SIZE = 1KB]</p>
+        <input id="file-input" type="file" name="myFile" />
+        <input id="file-submit" type="submit" value="upload" disabled />
+    </form>
+</body>
+<script>
+    let fileInput = document.getElementById("file-input");
+    let fileResult = document.getElementById("file-result");
+    let fileSubmit = document.getElementById("file-submit");
+    fileInput.addEventListener("change", function () {
+        if (fileInput.files.length > 0) {
+            const fileSize = fileInput.files.item(0).size;
+            const fileName = fileInput.files.item(0).name;
+            const fileKb = fileSize / 1024;
+            if (fileKb >= 1) {
+                alert("Please select a file less than 1KB.");
+                fileSubmit.disabled = true;
+            } else if (fileName.endsWith(".conf")) {
+                fileResult.innerHTML = "Please press upload if the file is correct.";
+                fileSubmit.disabled = false;
+            } else {
+                alert("Please select a file with '.conf' extension.")
+                fileSubmit.disabled = true;
+            }
+        }
+    });
+</script>
+
+</html>

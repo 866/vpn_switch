@@ -10,11 +10,17 @@ import (
 // The server's port to be listening on
 const Port = ":80"
 
+func faviconHandler(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "./static/favicon.ico")
+}
 
 func main() {
 	// Serve static files
 	fs := http.FileServer(http.Dir("./static"))
 	http.Handle("/static/*", http.StripPrefix("/static/", fs))
+
+	// Serve favicon
+	http.HandleFunc("/favicon.ico", faviconHandler)
 
 	// Handle main entry
 	http.HandleFunc("/", handlers.HandleRoot)

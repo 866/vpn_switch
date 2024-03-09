@@ -8,7 +8,8 @@ import (
 )
 
 // The server's port to be listening on
-const Port = ":8080"
+const Port = ":80"
+
 
 func main() {
 	// Serve static files

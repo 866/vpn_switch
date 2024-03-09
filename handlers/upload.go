@@ -9,7 +9,7 @@ import (
 )
 
 // The path where to store the uploaded file
-const vpnConfPath = "./wireguard/wg0.conf"
+const vpnConfPath = "/etc/wireguard/wg0.conf"
 
 // Display the named template
 func display(w http.ResponseWriter, data interface{}) {

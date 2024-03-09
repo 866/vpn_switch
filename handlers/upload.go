@@ -16,7 +16,7 @@ func display(w http.ResponseWriter, data interface{}) {
 	UploadTemplate.Execute(w, data)
 }
 
-func uploadFile(w http.ResponseWriter, r *http.Request) {
+func createNewVPN(w http.ResponseWriter, r *http.Request) {
 	// Maximum upload of 10 MB files
 	r.ParseMultipartForm(10 << 20)
 
@@ -45,7 +45,14 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Println("The file has been written to ", vpnConfPath)
-	fmt.Fprintf(w, "Successfully Uploaded File\n")
+
+	// Run the command to create the connection
+	output, err := setNewVPN()
+	if err != nil {
+		fmt.Fprintf(w, "The connection can not be created. Command output: %v, Error: %v\n", output, err)
+		return
+	}
+	fmt.Fprintf(w, "The new VPN connection has been created successfully\n")
 }
 
 func UploadHandler(w http.ResponseWriter, r *http.Request) {
@@ -58,6 +65,6 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	case "POST":
 		// Uploads a file
 		log.Println("Handling the file upload and creating a new connection.")
-		uploadFile(w, r)
+		createNewVPN(w, r)
 	}
 }

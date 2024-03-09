@@ -23,6 +23,14 @@ func vpnCommandStatus() bool {
 	return !(strings.TrimSpace(response) == "")
 }
 
+func setNewVPN() ([]byte, error) {
+	// Launches the script that creates a new VPN connection from wg0.conf file
+	// Run the shell command
+	log.Println("Run ./senewvpn.sh")
+	cmd := exec.Command("bash", "./setnewvpn.sh")
+	return cmd.Output()
+}
+
 func cmdVPN(command string) (err error) {
 	// Runs vpn command in shell
 	cmd := exec.Command("nmcli", "connection", command, "ua-vpn")

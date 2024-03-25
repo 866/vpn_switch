@@ -25,7 +25,13 @@ async function usbOff() {
 async function reboot() {
   const response = await fetch("/reboot");
   const get = await response.json();
-  console.log(get)
+  console.log(get);
+}
+
+async function shutdown() {
+  const response = await fetch("/shutdown");
+  const get = await response.json();
+  console.log(get);
 }
   
 const switchEl = document.getElementById('switch');

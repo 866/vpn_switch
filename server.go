@@ -34,8 +34,11 @@ func main() {
 	// Define vpn configuration upload requests
 	http.HandleFunc("/upload", handlers.UploadHandler)
 
-	// Define vpn configuration upload requests
+	// Define reboot request
 	http.HandleFunc("/reboot", handlers.HandleReboot)
+
+	// Define shutdown request
+	http.HandleFunc("/shutdown", handlers.HandleShutdown)
 
 	// Login handlers
 	http.HandleFunc("/login", handlers.Signin)

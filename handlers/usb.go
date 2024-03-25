@@ -8,6 +8,10 @@ import (
 )
 
 func HandleUSB(w http.ResponseWriter, r *http.Request) {
+	// Check if the user is logged in
+	if !CheckLoginAndRedirect(w, r) {
+		return
+	}
 	// Handles a USB request
 	log.Println("Send command \"USB Off\"")
 	err := cmdUSBOff()

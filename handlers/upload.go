@@ -56,6 +56,10 @@ func createNewVPN(w http.ResponseWriter, r *http.Request) {
 }
 
 func UploadHandler(w http.ResponseWriter, r *http.Request) {
+	// Check if the user is logged in
+	if !CheckLoginAndRedirect(w, r) {
+		return
+	}
 	// Handles /upload route
 	switch r.Method {
 	case "GET":

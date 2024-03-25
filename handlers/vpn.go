@@ -42,6 +42,10 @@ func cmdVPN(command string) (err error) {
 }
 
 func HandleVPN(w http.ResponseWriter, r *http.Request) {
+	// Check if the user is logged in
+	if !CheckLoginAndRedirect(w, r) {
+		return
+	}
 	// We expect JSON communication
 	w.Header().Set("Content-Type", "application/json")
 	// Handle GET and POST differently

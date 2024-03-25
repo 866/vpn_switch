@@ -9,6 +9,10 @@ import (
 
 // Handles /reboot route
 func HandleReboot(w http.ResponseWriter, r *http.Request) {
+	// Check if the user is logged in
+	if !CheckLoginAndRedirect(w, r) {
+		return
+	}
 	// Handles a USB request
 	log.Println("Send command \"Reboot\"")
 	err := cmdReboot()

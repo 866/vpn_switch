@@ -62,13 +62,13 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// Handles /upload route
 	switch r.Method {
-	case "GET":
-		// Displays a page for uploading
-		log.Println("Upload page is accessed.")
-		display(w, nil)
-	case "POST":
+	case http.MethodPost:
 		// Uploads a file
 		log.Println("Handling the file upload and creating a new connection.")
 		createNewVPN(w, r)
+	default:
+		// Displays a page for uploading
+		log.Println("Upload page is accessed.")
+		display(w, nil)		
 	}
 }

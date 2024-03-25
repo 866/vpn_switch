@@ -3,9 +3,12 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
+
+	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -19,8 +22,8 @@ const LoginToken = "login_token"
 
 // Create a struct that models the structure of a user, both in the request body, and in the DB
 type Credentials struct {
-	Password string `json:"password", db:"password"`
-	Username string `json:"username", db:"username"`
+	Password string
+	Username string
 }
 
 // this map stores the users sessions. For larger scale applications, you can use a database or cache for this purpose
@@ -58,6 +61,11 @@ func (s session) isExpired() bool {
 }
 
 func Signup(w http.ResponseWriter, r *http.Request) {
+	// Check if the user is logged in
+	loggedin, _ := UserIsLoggedIn(r)
+	if !loggedin {
+		return
+	}
 	// Parse and decode the request body into a new `Credentials` instance
 	creds := &Credentials{}
 	err := json.NewDecoder(r.Body).Decode(creds)
@@ -88,11 +96,10 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 }
 
 // Returns true if the user is logged in, else otherwise
-// Can return http.ErrNoCookie if there is no cookie 
+// Can return http.ErrNoCookie if there is no cookie
 func UserIsLoggedIn(r *http.Request) (authorized bool, err error) {
 	// Explicitely defin authorized to false
 	authorized = false
-
 	// Look for the login cookie
 	c, err := r.Cookie(LoginToken)
 	if err != nil {
@@ -103,21 +110,18 @@ func UserIsLoggedIn(r *http.Request) (authorized bool, err error) {
 		return
 	}
 	sessionToken := c.Value
-
 	// We then get the session from our session map
 	userSession, exists := sessions[sessionToken]
 	if !exists {
 		// If the session token is not present in session map, return an unauthorized error
 		return
 	}
-
 	// If the session is present, but has expired, we can delete the session, and return
 	// an unauthorized status
 	if userSession.isExpired() {
 		delete(sessions, sessionToken)
 		return
 	}
-	
 	// The checks are passed so the user is authorized
 	authorized = true
 	return
@@ -196,28 +200,38 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 		Value:   "",
 		Expires: time.Now(),
 	})
+
+	log.Println("The user is logged out. The cookie is destroyed.")
+	r.Method = http.MethodGet
+	http.Redirect(w, r, "/login", http.StatusSeeOther)
 }
 
-// Handles signing in procedure
-func Signin(w http.ResponseWriter, r *http.Request) {
-	// Parse and decode the request body into a new `Credentials` instance
-	creds := &Credentials{}
-	err := json.NewDecoder(r.Body).Decode(creds)
+// Handles login post
+func loginPOST(w http.ResponseWriter, r *http.Request) {
+	// Parse the form data
+	err := r.ParseForm()
 	if err != nil {
-		// If there is something wrong with the request body, return a 400 status
-		w.WriteHeader(http.StatusBadRequest)
+		log.Println("Failed to parse the form data: ", err)
+		http.Error(w, "Failed to parse form data", http.StatusInternalServerError)
 		return
 	}
+	// Parse and decode the request body into a new `Credentials` instance
+	username := r.Form.Get("username")
+	password := r.Form.Get("password")
+	creds := &Credentials{username, password}
 	// Get the existing entry present in the database for the given username
+	log.Println(creds)
 	result := db.QueryRow("select password from users where username=$1", creds.Username)
 	// We create another instance of `Credentials` to store the credentials we get from the database
 	storedCreds := &Credentials{}
 	// Store the obtained password in `storedCreds`
 	err = result.Scan(&storedCreds.Password)
 	if err != nil {
+		log.Println("Error while requesting the sql table data: ", err)
 		// If an entry with the username does not exist, send an "Unauthorized"(401) status
 		if err == sql.ErrNoRows {
 			w.WriteHeader(http.StatusUnauthorized)
+			fmt.Fprintf(w, "Wrong login name and password.")
 			return
 		}
 		// If the error is of any other type, send a 500 status
@@ -228,6 +242,7 @@ func Signin(w http.ResponseWriter, r *http.Request) {
 	// Compare the stored hashed password, with the hashed version of the password that was received
 	if err = bcrypt.CompareHashAndPassword([]byte(storedCreds.Password), []byte(creds.Password)); err != nil {
 		// If the two passwords don't match, return a 401 status
+		log.Println("Wrong login name and password.")
 		w.WriteHeader(http.StatusUnauthorized)
 	}
 
@@ -252,4 +267,20 @@ func Signin(w http.ResponseWriter, r *http.Request) {
 		Value:   sessionToken,
 		Expires: expiresAt,
 	})
+	log.Println("The user is logged in. The cookie is set.")
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+// Handles signing in procedure
+func Signin(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodPost:
+		// Uploads a file
+		log.Println("Handling the /login POST.")
+		loginPOST(w, r)
+	default:
+		log.Println("Handling the /login GET.")
+		LoginTemplate.Execute(w, nil)
+	}
+
 }

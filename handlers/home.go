@@ -16,12 +16,14 @@ type mainPageInfo struct {
 var (
 	HomeTemplate   *template.Template
 	UploadTemplate *template.Template
+	LoginTemplate  *template.Template
 )
 
 func init() {
 	// Load the templates
 	HomeTemplate = template.Must(template.ParseFiles("./templates/index.html"))
 	UploadTemplate = template.Must(template.ParseFiles("./templates/upload.html"))
+	LoginTemplate = template.Must(template.ParseFiles("./templates/login.html"))
 }
 
 // Checks if the user is logged in and redirects to the login page if necessary
@@ -29,13 +31,14 @@ func CheckLoginAndRedirect(w http.ResponseWriter, r *http.Request) bool {
 	log.Println("Check if the user is logged in.")
 	loggedin, err := UserIsLoggedIn(r)
 	// Check for the unexpected error
-	if err != http.ErrNoCookie {
-		log.Println("Unexpected error occurred while loggin in: ", err)
+	if err != nil && err != http.ErrNoCookie {
+		log.Println("Unexpected error occurred while logging in: ", err)
 		return false
 	}
-	// Check if user is not logged int
+	// Check if user is not logged in
 	if !loggedin {
-		log.Println("The user is not logged in. Redirecting")
+		log.Println("The user is not logged in. Redirecting...")
+		r.Method = http.MethodGet
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return false
 	}

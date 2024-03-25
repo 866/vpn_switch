@@ -38,7 +38,7 @@ func main() {
 	http.HandleFunc("/reboot", handlers.HandleReboot)
 
 	// Login handlers
-	http.HandleFunc("/signin", handlers.Signin)
+	http.HandleFunc("/login", handlers.Signin)
 	http.HandleFunc("/signup", handlers.Signup)
 	http.HandleFunc("/refresh", handlers.Refresh)
 	http.HandleFunc("/logout", handlers.Logout)

@@ -64,6 +64,7 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 	// Check if the user is logged in
 	loggedin, _ := UserIsLoggedIn(r)
 	if !loggedin {
+		log.Println("The user is not logged in")
 		return
 	}
 	// Parse and decode the request body into a new `Credentials` instance

@@ -293,12 +293,12 @@ func Signin(w http.ResponseWriter, r *http.Request) {
 
 // Handles signing in procedure
 func Signup(w http.ResponseWriter, r *http.Request) {
+	// Check if the user is logged in
+	if !CheckLoginAndRedirect(w, r) {
+		return
+	}
 	switch r.Method {
 	case http.MethodPost:
-		// Check if the user is logged in
-		if !CheckLoginAndRedirect(w, r) {
-			return
-		}
 		// Uploads a file
 		log.Println("Handling the /signup POST.")
 		signupPOST(w, r)

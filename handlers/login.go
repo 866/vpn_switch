@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -28,6 +27,13 @@ type Credentials struct {
 
 // this map stores the users sessions. For larger scale applications, you can use a database or cache for this purpose
 var sessions = map[string]session{}
+
+// Template stucture
+type signPageStructure struct {
+	Title        string
+	Route        string
+	SubmitButton string
+}
 
 // each session contains the username of the user and the time at which it expires
 type session struct {
@@ -60,22 +66,20 @@ func (s session) isExpired() bool {
 	return s.expiry.Before(time.Now())
 }
 
-func Signup(w http.ResponseWriter, r *http.Request) {
-	// Check if the user is logged in
-	loggedin, _ := UserIsLoggedIn(r)
-	if !loggedin {
-		log.Println("The user is not logged in")
+// Handling the case when the data is submitted and it is required to register the user
+func signupPOST(w http.ResponseWriter, r *http.Request) {
+	// Parse the form data
+	err := r.ParseForm()
+	if err != nil {
+		log.Println("Failed to parse the form data: ", err)
+		http.Error(w, "Failed to parse form data", http.StatusInternalServerError)
 		return
 	}
 	// Parse and decode the request body into a new `Credentials` instance
-	creds := &Credentials{}
-	err := json.NewDecoder(r.Body).Decode(creds)
-	if err != nil {
-		// If there is something wrong with the request body, return a 400 status
-		log.Println("Error occurred when decoding request body: ", err)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
+	username := r.Form.Get("username")
+	password := r.Form.Get("password")
+	creds := &Credentials{username, password}
+	// Get the existing entry present in the database for the given username
 	// Salt and hash the password using the bcrypt algorithm
 	// The second argument is the cost of hashing, which we arbitrarily set as 8 (this value can be more or less, depending on the computing power you wish to utilize)
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(creds.Password), 8)
@@ -94,6 +98,8 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// We reach this point if the credentials we correctly stored in the database, and the default status of 200 is sent back
+	log.Printf("The user %v has been registered with password %v.", username, password)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 // Returns true if the user is logged in, else otherwise
@@ -281,7 +287,23 @@ func Signin(w http.ResponseWriter, r *http.Request) {
 		loginPOST(w, r)
 	default:
 		log.Println("Handling the /login GET.")
-		LoginTemplate.Execute(w, nil)
+		SignTemplate.Execute(w, signPageStructure{"Login", "login", "Login"})
 	}
+}
 
+// Handles signing in procedure
+func Signup(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodPost:
+		// Check if the user is logged in
+		if !CheckLoginAndRedirect(w, r) {
+			return
+		}
+		// Uploads a file
+		log.Println("Handling the /signup POST.")
+		signupPOST(w, r)
+	default:
+		log.Println("Handling the /login GET.")
+		SignTemplate.Execute(w, signPageStructure{"Sign Up", "signup", "Submit"})
+	}
 }

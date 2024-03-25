@@ -16,14 +16,14 @@ type mainPageInfo struct {
 var (
 	HomeTemplate   *template.Template
 	UploadTemplate *template.Template
-	LoginTemplate  *template.Template
+	SignTemplate   *template.Template
 )
 
 func init() {
 	// Load the templates
 	HomeTemplate = template.Must(template.ParseFiles("./templates/index.html"))
 	UploadTemplate = template.Must(template.ParseFiles("./templates/upload.html"))
-	LoginTemplate = template.Must(template.ParseFiles("./templates/login.html"))
+	SignTemplate = template.Must(template.ParseFiles("./templates/login.html"))
 }
 
 // Checks if the user is logged in and redirects to the login page if necessary

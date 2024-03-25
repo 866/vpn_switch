@@ -34,6 +34,9 @@ func main() {
 	// Define vpn configuration upload requests
 	http.HandleFunc("/upload", handlers.UploadHandler)
 
+	// Define vpn configuration upload requests
+	http.HandleFunc("/reboot", handlers.HandleReboot)
+
 	// Run the server
 	log.Printf("Server listening on port %v...", Port)
 	log.Fatal(http.ListenAndServe(Port, nil))

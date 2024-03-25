@@ -21,6 +21,12 @@ async function usbOff() {
   const get = await response.json();
   console.log(get)
 }
+
+async function reboot() {
+  const response = await fetch("/reboot");
+  const get = await response.json();
+  console.log(get)
+}
   
 const switchEl = document.getElementById('switch');
   
